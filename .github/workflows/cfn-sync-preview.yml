@@ -110,7 +110,6 @@ jobs:
       - name: Sync Files
         run: |
           aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
-        working-directory: ./projects/landing
       - name: Comment Preview URL on PR
         uses: thollander/actions-comment-pull-request@v2
         with:
