@@ -28,6 +28,7 @@ jobs:
           filters: |
             cfn:
               - 'cloudformation/**'
+              - '.github/workflows/cfn-sync.yml'
   
   cloudformation-update:
     needs: changes
@@ -46,7 +47,7 @@ jobs:
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
           name: ${{ env.AWS_STACK_NAME }}
-          template: ./cloudformation/formation.yaml
+          template: ./cloudformation/formation.yml
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stack --stack-name=${{ env.AWS_STACK_NAME }} --output text
