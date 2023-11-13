@@ -29,6 +29,15 @@ Resources:
               - - 'arn:aws:s3:::'
                 - !Ref S3Bucket
                 - /*
+          - Sid: GithubUploadObjects
+            Effect: Allow
+            Principal: 'arn:aws:iam::958162765243:role/StaticSiteExampleRole'
+            Action: 's3:PutObject'
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref S3Bucket
+                - /*
       Bucket: !Ref S3Bucket
 Outputs:
   WebsiteURL:
