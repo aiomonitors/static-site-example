@@ -6,6 +6,11 @@ env:
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
 
+# Permission can be added at job level or workflow level    
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
+  
 on:
   workflow_run:
     workflows:
@@ -46,6 +51,7 @@ jobs:
           name: static-site-build
           path: ./out
   upload-s3:
+    needs: build
     name: Upload Files to S3
     runs-on: ubuntu-latest
     steps:
