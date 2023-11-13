@@ -44,7 +44,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --no-fail-on-empty-changeset --output text
+          aws cloudformation deploy --template-file ./cloudformation/formation.yml \
+          --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} \
+          --tags BranchName=${{ github.ref }}
+          --no-fail-on-empty-changeset \
+          --output text
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --output table
