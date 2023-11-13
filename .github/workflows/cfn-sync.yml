@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   changes:
-    runs-on: ubuntu-;atest
+    runs-on: ubuntu-latest
     outputs:
       cfn: ${{ steps.changes.outputs.cfn }}
     steps:
