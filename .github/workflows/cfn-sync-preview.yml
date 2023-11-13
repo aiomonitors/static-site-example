@@ -9,7 +9,7 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ GITHUB_REF }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ env.GITHUB_REF }}
 
 # Permission can be added at job level or workflow level    
 permissions:
