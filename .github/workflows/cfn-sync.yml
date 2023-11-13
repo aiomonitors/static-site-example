@@ -48,4 +48,4 @@ jobs:
           aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text
       - name: Get Outputs from Stack
         run: |
-          aws cloudformation describe-stack --stack-name=${{ env.AWS_STACK_NAME }} --output text
+          aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output text
