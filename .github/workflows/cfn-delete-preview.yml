@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ GITHUB_REF }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
 
 # Permission can be added at job level or workflow level    
 permissions:
@@ -29,5 +29,5 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Delete AWS CFN Stack
         run: | 
-          aws cloudformation delete-stack --stack-name=${{ env.AWS_STACK_NAME }}
+          aws cloudformation delete-stack --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.GITHUB_REF }}
     
