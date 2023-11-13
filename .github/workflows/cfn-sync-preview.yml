@@ -109,7 +109,7 @@ jobs:
           echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --query "Stacks[0].Outputs[2].OutputValue")"
       - name: Sync Files
         run: |
-          aws s3 sync /builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
+          aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
         working-directory: ./projects/landing
       - name: Comment Preview URL on PR
         uses: thollander/actions-comment-pull-request@v2
