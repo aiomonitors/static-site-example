@@ -46,6 +46,7 @@ jobs:
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.GITHUB_REF }} --output table
   build:
+    needs: cloudformation-update
     name: Build Application
     runs-on: ubuntu-latest
     steps:
