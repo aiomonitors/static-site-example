@@ -85,6 +85,8 @@ jobs:
     needs: build
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - uses: actions/checkout@v3
       - name: Update Environment 
