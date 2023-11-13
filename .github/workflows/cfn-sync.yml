@@ -16,23 +16,23 @@ permissions:
   contents: read    # This is required for actions/checkout
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      cfn: ${{ steps.changes.outputs.cfn }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: dorny/paths-filter@v2
-        id: changes
-        with:
-          filters: |
-            cfn:
-              - 'cloudformation/**'
-              - '.github/workflows/cfn-sync.yml'
+  # changes:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     cfn: ${{ steps.changes.outputs.cfn }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: dorny/paths-filter@v2
+  #       id: changes
+  #       with:
+  #         filters: |
+  #           cfn:
+  #             - 'cloudformation/**'
+  #             - '.github/workflows/cfn-sync.yml'
   
   cloudformation-update:
-    needs: changes
-    if: ${{ needs.changes.outputs.cfn == 'true' }}
+    # needs: changes
+    # if: ${{ needs.changes.outputs.cfn == 'true' }}
     runs-on: ubuntu-latest
     steps: 
       - uses: actions/checkout@v3
@@ -44,10 +44,8 @@ jobs:
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: ${{ env.AWS_STACK_NAME }}
-          template: ./cloudformation/formation.yml
+        run: | 
+          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stack --stack-name=${{ env.AWS_STACK_NAME }} --output text
