@@ -52,7 +52,7 @@ jobs:
     name: Build Application
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: 16.16.0
@@ -99,17 +99,14 @@ jobs:
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
-          path: ./out
-      - uses: geekyeggo/delete-artifact@v2
-        with:
-          name: static-site-build
+          path: /builds/out
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
           echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --query "Stacks[0].Outputs[2].OutputValue")"
       - name: Sync Files
         run: |
-          aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
+          aws s3 sync /builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
       - name: Get Website URL
         id: website_url
         run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
@@ -120,3 +117,6 @@ jobs:
           message: ${{ steps.website_url.outputs.url }}
           reactions: eyes, rocket
           pr_number: ${{github.event.number}}
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: static-site-build
