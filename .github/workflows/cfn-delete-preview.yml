@@ -29,5 +29,5 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Delete AWS CFN Stack
         run: | 
-          aws cloudformation delete-stack --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.GITHUB_REF }}
+          aws cloudformation delete-stack --stack-name=${{ env.AWS_STACK_NAME }}-${{ github.ref }}
     
