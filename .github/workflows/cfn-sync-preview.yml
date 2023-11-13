@@ -5,40 +5,55 @@ on:
     types:
       - "opened"
       - "edited"
+      - "synchronize"
+  # push:
+  #   branches-ignore:
+  #     - main
+  #   paths-ignore:
+  #     - README.md
+  #     - CHANGELOG.md  # Should never be edited anyway
+  #     - .gitignore
+  #     - .github/**
+  #     - Jenkinsfile
+
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ GITHUB_REF }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
 
 # Permission can be added at job level or workflow level    
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
+  pull-requests: write
 
 jobs:
   cloudformation-update:
     runs-on: ubuntu-latest
     steps: 
       - uses: actions/checkout@v3
+      - name: Update Environment 
+        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC_Preview
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text
+          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --no-fail-on-empty-changeset --output text
       - name: Get Outputs from Stack
         run: |
-          aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output table
+          aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --output table
   build:
+    needs: cloudformation-update
     name: Build Application
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: 16.16.0
@@ -73,6 +88,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Update Environment 
+        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -80,27 +97,26 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
+      - name: Get Website URL
+        id: website_url
+        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
-          path: ./out
-      - uses: geekyeggo/delete-artifact@v2
-        with:
-          name: static-site-build
+          path: ./builds/out
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
-          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[2].OutputValue")"
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --query "Stacks[0].Outputs[2].OutputValue")"
       - name: Sync Files
         run: |
-          aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
-      - name: Get Website URL
-        id: website_url
-        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
-        working-directory: ./projects/landing
+          aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
       - name: Comment Preview URL on PR
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: ${{ steps.website_url.outputs.url }}
           reactions: eyes, rocket
           pr_number: ${{github.event.number}}
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: static-site-build
