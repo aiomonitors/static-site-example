@@ -1,0 +1,71 @@
+name: Production Build
+run-name: Static Site Production Build
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ROLE: ${{ secrets.AWS_ROLE }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
+
+on:
+  workflow_run:
+    workflows:
+      - "Deploy Cloudformation Stack"
+    branches: [main]
+    types:
+      - completed
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: latest
+          cache: 'yarn'
+          always-auth: true
+      - run: npm install -g yarn
+      - name: Cache NodeModules
+        id: node-module-cache
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ./node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Install Packages
+        run: yarn install --frozen-lockfile
+        if: steps.node-module-cache.outputs.cache-hit != 'true'
+      - name: Upload Next Static Build
+        uses: actions/upload-artifact@master
+        with:
+          name: static-site-build
+          path: ./out
+  upload-s3:
+    name: Upload Files to S3
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: actions/download-artifact@master
+        with:
+          name: static-site-build
+          path: ./out
+      - id: query_bucket
+        name: Get S3 Bucket Name
+        run: |
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[2].OutputValue")"
+      - name: Sync Files
+        run: |
+          aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
+        
