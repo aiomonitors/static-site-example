@@ -33,7 +33,7 @@ jobs:
     steps: 
       - uses: actions/checkout@v3
       - name: Update Environment 
-        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / _)" >> $GITHUB_ENV
+        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
