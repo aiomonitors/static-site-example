@@ -40,7 +40,7 @@ jobs:
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC_Preview
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC_${{ github.sha }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
@@ -99,7 +99,7 @@ jobs:
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC__${{ github.sha }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
