@@ -20,8 +20,12 @@ jobs:
     runs-on: ubuntu-latest
     steps: 
       - uses: actions/checkout@v3
+      - id: find-pull-request
+        uses: jwalton/gh-find-current-pr@v1
+        with:
+          state: closed
       - name: Update Environment 
-        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
+        run: echo "ref_name_replaced=$(echo "refs/pull/${{ github.ref }}/merge" | tr / -)" >> $GITHUB_ENV
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
