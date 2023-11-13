@@ -1,24 +1,39 @@
-name: Production Build
-run-name: Static Site Production Build
+name: Deploy Cloudformation - Preview
+
+on:
+  pull_request:
+    types:
+      - "opened"
+      - "edited"
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ GITHUB_REF }}
 
 # Permission can be added at job level or workflow level    
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
 
-on:
-  workflow_run:
-    workflows:
-      - "Deploy Cloudformation Stack - Production"
-    branches: [main]
-    types:
-      - completed
 jobs:
+  cloudformation-update:
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Deploy to AWS CFN
+        run: | 
+          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text
+      - name: Get Outputs from Stack
+        run: |
+          aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output table
   build:
     name: Build Application
     runs-on: ubuntu-latest
@@ -79,4 +94,13 @@ jobs:
       - name: Sync Files
         run: |
           aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
-        
+      - name: Get Website URL
+        id: website_url
+        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+        working-directory: ./projects/landing
+      - name: Comment Preview URL on PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: ${{ steps.website_url.outputs.url }}
+          reactions: eyes, rocket
+          pr_number: ${{github.event.number}}

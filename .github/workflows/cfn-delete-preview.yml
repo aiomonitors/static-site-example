@@ -1,14 +1,14 @@
-name: Deploy Cloudformation Stack - Production
+name: Deploy Cloudformation Stack - Preview
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types:
+      - "closed"
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
+  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}-${{ GITHUB_REF }}
 
 # Permission can be added at job level or workflow level    
 permissions:
@@ -16,7 +16,7 @@ permissions:
   contents: read    # This is required for actions/checkout
 
 jobs:
-  cloudformation-update:
+  cloudformation-delete:
     runs-on: ubuntu-latest
     steps: 
       - uses: actions/checkout@v3
@@ -27,9 +27,7 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
-      - name: Deploy to AWS CFN
+      - name: Delete AWS CFN Stack
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text
-      - name: Get Outputs from Stack
-        run: |
-          aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output table
+          aws cloudformation delete-stack --stack-name=${{ env.AWS_STACK_NAME }}
+    
