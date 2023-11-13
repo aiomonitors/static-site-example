@@ -31,7 +31,8 @@ Resources:
                 - /*
           - Sid: GithubUploadObjects
             Effect: Allow
-            Principal: 'arn:aws:iam::958162765243:role/StaticSiteExampleRole'
+            Principal: 
+              AWS: 'arn:aws:iam::958162765243:role/StaticSiteExampleRole'
             Action: 's3:PutObject'
             Resource: !Join 
               - ''
