@@ -10,7 +10,7 @@ env:
 permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
-  
+
 on:
   workflow_run:
     workflows:
@@ -45,6 +45,8 @@ jobs:
       - name: Install Packages
         run: yarn install --frozen-lockfile
         if: steps.node-module-cache.outputs.cache-hit != 'true'
+      - name: Build Application
+        run: yarn build
       - name: Upload Next Static Build
         uses: actions/upload-artifact@master
         with:
