@@ -46,7 +46,7 @@ jobs:
         run: | 
           aws cloudformation deploy --template-file ./cloudformation/formation.yml \
           --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} \
-          --tags BranchName=${{ github.ref }}
+          --tags BranchName=${{ github.ref }} \
           --no-fail-on-empty-changeset \
           --output text
       - name: Get Outputs from Stack
