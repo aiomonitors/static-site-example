@@ -30,21 +30,29 @@ permissions:
 
 jobs:
   cloudformation-update:
+    name: Update or Create Cloudformation Stack
     runs-on: ubuntu-latest
     steps: 
       - uses: actions/checkout@v3
-      - name: Update Environment 
-        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
+      - id: set-env
+        name: Update Environment 
+        run: |
+          echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC_Preview
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC_${{ steps.set-env.outputs.sha_short }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/formation.yml --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --no-fail-on-empty-changeset --output text
+          aws cloudformation deploy --template-file ./cloudformation/formation.yml \
+          --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} \
+          --tags BranchName=${{ github.ref }} \
+          --no-fail-on-empty-changeset \
+          --output text
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-${{ env.ref_name_replaced }} --output table
@@ -88,14 +96,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Update Environment 
-        run: echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
+      - id: set-env
+        name: Update Environment 
+        run: |
+          echo "ref_name_replaced=$(echo "${{ github.ref }}" | tr / -)" >> $GITHUB_ENV
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC_${{ steps.set-env.outputs.sha_short }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
