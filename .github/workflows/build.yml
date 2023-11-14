@@ -74,6 +74,7 @@ jobs:
     needs: build
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    environment: production
     outputs:
       website_url: ${{ steps.website_url.outputs.url }}
     steps:
