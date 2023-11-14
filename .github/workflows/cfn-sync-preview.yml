@@ -30,6 +30,7 @@ permissions:
 
 jobs:
   set-env:
+    name: Set Environment
     uses: ./.github/workflows/setup-env.yml
     secrets: inherit
   cloudformation-update:
