@@ -1,20 +1,13 @@
 name: Deploy Cloudformation - Preview
 
+concurrency: preview-cfn-${{ github.ref }}
+
 on:
   pull_request:
     types:
       - "opened"
       - "edited"
       - "synchronize"
-  # push:
-  #   branches-ignore:
-  #     - main
-  #   paths-ignore:
-  #     - README.md
-  #     - CHANGELOG.md  # Should never be edited anyway
-  #     - .gitignore
-  #     - .github/**
-  #     - Jenkinsfile
 
 
 env:
@@ -27,12 +20,31 @@ permissions:
   id-token: write   # This is required for requesting the JWT
   contents: read    # This is required for actions/checkout
   pull-requests: write
+  deployments: write
 
 jobs:
   set-env:
     name: Set Environment
     uses: ./.github/workflows/setup-env.yml
     secrets: inherit
+  create-deployment:
+    needs: [set-env]
+    runs-on: ubuntu-latest
+    name: Create Deployment in Github
+    outputs:
+      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: chrnorm/deployment-action@v2
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: '${{ github.token }}'
+          environment: preview-${{ needs.set-env.outputs.ref_name_replaced }}
+          transient-environment: true
+          auto-inactive: true
+          initial-status: "pending"
+
   cloudformation-update:
     name: Update or Create Cloudformation Stack
     runs-on: ubuntu-latest
@@ -96,6 +108,8 @@ jobs:
       - set-env
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    outputs:
+      website_url: ${{ steps.website_url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
       - name: configure aws credentials
@@ -107,7 +121,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" | tr -d \")" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
@@ -119,12 +133,33 @@ jobs:
       - name: Sync Files
         run: |
           aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
-      - name: Comment Preview URL on PR
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: ${{ steps.website_url.outputs.url }}
-          reactions: eyes, rocket
-          pr_number: ${{github.event.number}}
+      # - name: Comment Preview URL on PR
+      #   uses: thollander/actions-comment-pull-request@v2
+      #   with:
+      #     message: ${{ steps.website_url.outputs.url }}
+      #     reactions: eyes, rocket
+      #     pr_number: ${{github.event.number}}
       - uses: geekyeggo/delete-artifact@v2
         with:
           name: static-site-build
+  update-deployment:
+    needs: [create-deployment, upload-s3]
+    name: Update Deployment Status
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3
+      - name: Update Deployment - Success
+        if: ${{ always() && contains(needs.*.result, 'success') }}
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          environment-url: ${{ needs.upload-s3.outputs.website_url }}
+          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+          state: 'success'
+      - name: Update Deployment - Failure
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: '${{ github.token }}'
+          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+          state: 'failure'
