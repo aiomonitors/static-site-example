@@ -48,7 +48,6 @@ jobs:
           token: "${{ github.token }}"
           environment: preview
           initial_status: "pending"
-          ref: ${{ github.ref }}
           pr: true
           pr_id: ${{ needs.set-env.outputs.pr_number }}
           target_url: http://example.com
@@ -163,6 +162,8 @@ jobs:
           target_url: ${{ needs.upload-s3.outputs.website_url }}
           state: "success"
           deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+          pr: true
+          pr_id: ${{ needs.set-env.outputs.pr_number }}
       - name: Update Deployment - Failure
         if: ${{ always() && contains(needs.*.result, 'failure') }}
         uses: altinukshini/deployment-status@releases/v1
