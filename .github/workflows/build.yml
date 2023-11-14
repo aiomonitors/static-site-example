@@ -100,7 +100,7 @@ jobs:
           aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue" | tr \" \w)" >> $GITHUB_OUTPUT
   update-deployment:
     needs: [create-deployment, build, upload-s3]
     name: Update Deployment Status
