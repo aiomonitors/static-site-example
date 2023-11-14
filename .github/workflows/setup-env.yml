@@ -1,6 +1,20 @@
 name: Setup Environment - Preview
 
-on: [workflow_call]
+on:
+  workflow_call:
+    outputs:
+      aws_session_name: 
+        description: "The session name to use"
+        value: GitHub_to_AWS_via_FederatedOIDC_Preview_${{ jobs.setup_env.outputs.sha_short }}
+      aws_stack_name: 
+        description: "The stack name"
+        value: ${{ env.AWS_STACK_NAME }}-${{ jobs.setup_env.outputs.ref_name_replaced }}
+      ref_name_replaced: 
+        description: "The ref name, with slashes replaced with hyphens"
+        value: ${{ jobs.setup_env.outputs.ref_name_replaced }}
+      sha_short:
+        description: "The shortened sha"
+        value: ${{ jobs.setup_env.outputs.sha_short }}
 
 permissions:
   contents: read
@@ -13,8 +27,8 @@ jobs:
     name: Setup Preview Job Environment
     runs-on: ubuntu-latest
     outputs:
-      aws_session_name: GitHub_to_AWS_via_FederatedOIDC_Preview_${{ steps.set-env.outputs.sha_short }}
-      aws_stack_name: ${{ env.AWS_STACK_NAME }}-${{ steps.set-env-outputs.ref_name_replaced }}
+      ref_name_replaced: ${{ steps.set-env-outputs.ref_name_replaced }}
+      sha_short: ${{ steps.set-env.outputs.sha_short }}
     steps:
       - uses: actions/checkout@v3
       - id: find-pull-request

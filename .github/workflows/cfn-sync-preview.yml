@@ -43,18 +43,18 @@ jobs:
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: ${{ needs.set-env.setup_env.outputs.aws_session_name }}
+          role-session-name: ${{ needs.set-env.outputs.aws_session_name }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
           aws cloudformation deploy --template-file ./cloudformation/formation.yml \
-          --stack-name=${{ needs.set-env.setup_env.outputs.aws_stack_name }} \
+          --stack-name=${{ needs.set-env.outputs.aws_stack_name }} \
           --tags BranchName=${{ github.ref }} \
           --no-fail-on-empty-changeset \
           --output text
       - name: Get Outputs from Stack
         run: |
-          aws cloudformation describe-stacks --stack-name=${{ needs.set-env.setup_env.outputs.aws_stack_name }} --output table
+          aws cloudformation describe-stacks --stack-name=${{ needs.set-env.outputs.aws_stack_name }} --output table
   build:
     needs: cloudformation-update
     name: Build Application
@@ -102,11 +102,11 @@ jobs:
         with:
           audience: sts.amazonaws.com
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
-          role-session-name: ${{ needs.set-env.setup_env.outputs.aws_session_name }}
+          role-session-name: ${{ needs.set-env.outputs.aws_session_name }}
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.setup_env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
@@ -114,7 +114,7 @@ jobs:
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
-          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.setup_env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[2].OutputValue")"
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[2].OutputValue")"
       - name: Sync Files
         run: |
           aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
