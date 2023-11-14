@@ -8,7 +8,7 @@ on:
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
+  AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
 
 # Permission can be added at job level or workflow level    
 permissions:

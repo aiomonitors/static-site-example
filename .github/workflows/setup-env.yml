@@ -6,7 +6,7 @@ permissions:
   contents: read
 
 env:
-  AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
+  AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
 
 jobs:
   setup_env:
