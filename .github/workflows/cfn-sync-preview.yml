@@ -41,7 +41,7 @@ jobs:
       deployment_id: ${{ steps.deployment.outputs.deployment_id }}
     steps:
       - uses: actions/checkout@v3
-      - uses: altinukshini/deployment-action@releases/v1
+      - uses: altinukshini/deployment-action@v1.2.6
         name: Create GitHub deployment
         id: deployment
         with:
@@ -156,7 +156,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Update Deployment - Success
         if: ${{ always() && contains(needs.*.result, 'success') }}
-        uses: altinukshini/deployment-status@releases/v1
+        uses: altinukshini/deployment-action@v1.2.6
         with:
           token: "${{ github.token }}"
           target_url: ${{ needs.upload-s3.outputs.website_url }}
@@ -166,7 +166,7 @@ jobs:
           pr_id: ${{ needs.set-env.outputs.pr_number }}
       - name: Update Deployment - Failure
         if: ${{ always() && contains(needs.*.result, 'failure') }}
-        uses: altinukshini/deployment-status@releases/v1
+        uses: altinukshini/deployment-action@v1.2.6
         with:
           token: "${{ github.token }}"
           state: "failure"
