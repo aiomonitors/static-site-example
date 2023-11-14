@@ -47,7 +47,6 @@ jobs:
         id: deployment
         with:
           token: '${{ github.token }}'
-          environment-url: http://my-app-url.com
           environment: preview-${{ needs.set-env.outputs.ref_name_replaced }}
           transient-environment: true
           auto-inactive: true

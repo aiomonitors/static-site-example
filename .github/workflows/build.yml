@@ -33,7 +33,6 @@ jobs:
         id: deployment
         with:
           token: '${{ github.token }}'
-          environment-url: http://my-app-url.com
           environment: production
           auto-inactive: true
           initial-status: "pending"
