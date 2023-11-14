@@ -33,6 +33,21 @@ jobs:
     name: Set Environment
     uses: ./.github/workflows/setup-env.yml
     secrets: inherit
+  create-deployment:
+    runs-on: ubuntu-latest
+    name: Create Deployment in Github
+    outputs:
+      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: altinukshini/deployment-action@releases/v1
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ github.token }}"
+          environment: preview
+          initial_status: "pending"
+          ref: ${{ github.ref }}
   cloudformation-update:
     name: Update or Create Cloudformation Stack
     runs-on: ubuntu-latest
@@ -96,6 +111,8 @@ jobs:
       - set-env
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    outputs:
+      website_url: ${{ steps.website_url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
       - name: configure aws credentials
@@ -107,7 +124,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue")" | tr \" ' ')" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
@@ -128,3 +145,24 @@ jobs:
       - uses: geekyeggo/delete-artifact@v2
         with:
           name: static-site-build
+  update-deployment:
+    needs: [create-deployment, upload-s3]
+    name: Update Deployment Status
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3
+      - name: Update Deployment - Success
+        if: ${{ always() && contains(needs.*.result, 'success') }}
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          target_url: ${{ needs.upload-s3.outputs.website_url }}
+          state: "success"
+          deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+      - name: Update Deployment - Failure
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          state: "failure"
+          deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
