@@ -6,7 +6,7 @@ on:
       - main
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
 

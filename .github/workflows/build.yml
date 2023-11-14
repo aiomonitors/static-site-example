@@ -2,7 +2,7 @@ name: Production Build
 run-name: Static Site Production Build
 
 env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ secrets.AWS_STACK_NAME }}
 
