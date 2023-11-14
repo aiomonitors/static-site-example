@@ -35,6 +35,7 @@ jobs:
     uses: ./.github/workflows/setup-env.yml
     secrets: inherit
   create-deployment:
+    needs: [set-env]
     runs-on: ubuntu-latest
     name: Create Deployment in Github
     outputs:
@@ -48,6 +49,7 @@ jobs:
           token: "${{ github.token }}"
           environment: preview
           initial_status: "pending"
+          transient_environment: true
           pr: true
           pr_id: ${{ needs.set-env.outputs.pr_number }}
           target_url: http://example.com
@@ -171,3 +173,5 @@ jobs:
           token: "${{ github.token }}"
           state: "failure"
           deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+          pr: true
+          pr_id: ${{ needs.set-env.outputs.pr_number }}
