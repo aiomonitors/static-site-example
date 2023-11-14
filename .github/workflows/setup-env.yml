@@ -1,0 +1,43 @@
+name: Setup Environment - Preview
+
+on:
+  workflow_call:
+    outputs:
+      aws_session_name: 
+        description: "The session name to use"
+        value: GitHub_to_AWS_via_FederatedOIDC_Preview_${{ jobs.setup_env.outputs.sha_short }}
+      aws_stack_name: 
+        description: "The stack name"
+        value: ${{ jobs.setup_env.outputs.aws_stack_name }}
+      ref_name_replaced: 
+        description: "The ref name, with slashes replaced with hyphens"
+        value: ${{ jobs.setup_env.outputs.ref_name_replaced }}
+      sha_short:
+        description: "The shortened sha"
+        value: ${{ jobs.setup_env.outputs.sha_short }}
+
+permissions:
+  contents: read
+
+env:
+  AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
+
+jobs:
+  setup_env:
+    name: Setup Preview Job Environment
+    runs-on: ubuntu-latest
+    outputs:
+      aws_stack_name: ${{ env.AWS_STACK_NAME }}-${{ steps.set-env.outputs.ref_name_replaced }}
+      ref_name_replaced: ${{ steps.set-env.outputs.ref_name_replaced }}
+      sha_short: ${{ steps.set-env.outputs.sha_short }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: find-pull-request
+        uses: jwalton/gh-find-current-pr@v1
+        with:
+          state: all
+      - id: set-env
+        name: Update Environment
+        run: |
+          echo "ref_name_replaced=$(echo "refs/pull/${{ steps.find-pull-request.outputs.number }}/merge" | tr / -)" >> $GITHUB_OUTPUT
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
