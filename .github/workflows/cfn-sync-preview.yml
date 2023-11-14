@@ -49,6 +49,8 @@ jobs:
           environment: preview
           initial_status: "pending"
           ref: ${{ github.ref }}
+          pr: true
+          pr_id: ${{ needs.set-env.outputs.pr_number }}
   cloudformation-update:
     name: Update or Create Cloudformation Stack
     runs-on: ubuntu-latest

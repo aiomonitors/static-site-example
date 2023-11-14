@@ -15,6 +15,10 @@ on:
       sha_short:
         description: "The shortened sha"
         value: ${{ jobs.setup_env.outputs.sha_short }}
+      pr_number:
+        description: "The PR number"
+        value: ${{ jobs.setup_env.outputs.pr_number }}
+
 
 permissions:
   contents: read
@@ -30,6 +34,7 @@ jobs:
       aws_stack_name: ${{ env.AWS_STACK_NAME }}-${{ steps.set-env.outputs.ref_name_replaced }}
       ref_name_replaced: ${{ steps.set-env.outputs.ref_name_replaced }}
       sha_short: ${{ steps.set-env.outputs.sha_short }}
+      pr_number: ${{ steps.set-env.outputs.pr_number }}
     steps:
       - uses: actions/checkout@v3
       - id: find-pull-request
@@ -41,3 +46,4 @@ jobs:
         run: |
           echo "ref_name_replaced=$(echo "refs/pull/${{ steps.find-pull-request.outputs.number }}/merge" | tr / -)" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "pr_number=${{ steps.find-pull-request.outputs.number }}" >> GITHUB_OUTPUT
