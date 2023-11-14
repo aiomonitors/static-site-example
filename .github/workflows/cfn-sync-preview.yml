@@ -8,15 +8,6 @@ on:
       - "opened"
       - "edited"
       - "synchronize"
-  # push:
-  #   branches-ignore:
-  #     - main
-  #   paths-ignore:
-  #     - README.md
-  #     - CHANGELOG.md  # Should never be edited anyway
-  #     - .gitignore
-  #     - .github/**
-  #     - Jenkinsfile
 
 
 env:
