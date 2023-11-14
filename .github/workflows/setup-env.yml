@@ -46,4 +46,4 @@ jobs:
         run: |
           echo "ref_name_replaced=$(echo "refs/pull/${{ steps.find-pull-request.outputs.number }}/merge" | tr / -)" >> $GITHUB_OUTPUT
           echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "pr_number=$(${{ steps.find-pull-request.outputs.number }})" >> GITHUB_OUTPUT
+          echo "pr_number="${{ steps.find-pull-request.outputs.number }}"" >> GITHUB_OUTPUT
