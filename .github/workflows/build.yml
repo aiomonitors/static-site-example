@@ -18,7 +18,22 @@ on:
     branches: [main]
     types:
       - completed
+
 jobs:
+  create-deployment:
+    runs-on: ubuntu-latest
+    name: Create Deployment in Github
+    outputs:
+      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: altinukshini/deployment-action@releases/v1
+        name: Create GitHub deployment
+        id: deployment
+        with:
+          token: "${{ github.token }}"
+          environment: production
+          initial_status: "pending"
   build:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Build Application
@@ -57,6 +72,8 @@ jobs:
     needs: build
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    outputs:
+      website_url: ${{ steps.website_url.outputs.url }}
     steps:
       - uses: actions/checkout@v3
       - name: configure aws credentials
@@ -80,4 +97,28 @@ jobs:
       - name: Sync Files
         run: |
           aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
-        
+      - name: Get Website URL
+        id: website_url
+        run: echo "url=$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" >> $GITHUB_OUTPUT
+  update-deployment:
+    needs: [create-deployment, build, upload-s3]
+    name: Update Deployment Status
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v3
+      - name: Update Deployment - Success
+        if: ${{ always() && contains(needs.*.result, 'success') }}
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          target_url: ${{ needs.upload-s3.outputs.website_url }}
+          state: "success"
+          deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+      - name: Update Deployment - Failure
+        if: ${{ always() && contains(needs.*.result, 'failure') }}
+        uses: altinukshini/deployment-status@releases/v1
+        with:
+          token: "${{ github.token }}"
+          state: "failure"
+          deployment_id: ${{ needs.create-deployment.outputs.deployment_id }}
+
