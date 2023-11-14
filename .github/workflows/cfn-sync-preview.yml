@@ -133,12 +133,12 @@ jobs:
       - name: Sync Files
         run: |
           aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
-      - name: Comment Preview URL on PR
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: ${{ steps.website_url.outputs.url }}
-          reactions: eyes, rocket
-          pr_number: ${{github.event.number}}
+      # - name: Comment Preview URL on PR
+      #   uses: thollander/actions-comment-pull-request@v2
+      #   with:
+      #     message: ${{ steps.website_url.outputs.url }}
+      #     reactions: eyes, rocket
+      #     pr_number: ${{github.event.number}}
       - uses: geekyeggo/delete-artifact@v2
         with:
           name: static-site-build
