@@ -1,5 +1,7 @@
 name: Deploy Cloudformation - Preview
 
+concurrency: preview-cfn-${{ github.ref }}
+
 on:
   pull_request:
     types:
