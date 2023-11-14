@@ -53,6 +53,7 @@ jobs:
           pr: true
           pr_id: ${{ needs.set-env.outputs.pr_number }}
           target_url: http://example.com
+          ref: ${{ github.sha }}
   cloudformation-update:
     name: Update or Create Cloudformation Stack
     runs-on: ubuntu-latest
