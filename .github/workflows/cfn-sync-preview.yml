@@ -30,7 +30,7 @@ permissions:
 
 jobs:
   set-env:
-    uses: ./github/workflows/setup-env.yml
+    uses: ./.github/workflows/setup-env.yml
     secrets: inherit
   cloudformation-update:
     name: Update or Create Cloudformation Stack
