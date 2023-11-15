@@ -33,6 +33,13 @@ jobs:
           role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
           role-session-name: ${{ needs.set-env.outputs.aws_session_name }}
           aws-region: ${{ env.AWS_REGION }}
+      - id: query_bucket
+        name: Get S3 Bucket Name
+        run: |
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[2].OutputValue")"
+      - name: Delete S3 Bucket Objects
+        run: |
+          aws s3 rm s3://${{ steps.query_bucket.outputs.BucketName }} --recursive
       - name: Delete AWS CFN Stack
         run: | 
           aws cloudformation delete-stack --stack-name=${{ needs.set-env.outputs.aws_stack_name }}
