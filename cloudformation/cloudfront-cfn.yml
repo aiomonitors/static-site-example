@@ -1,6 +1,24 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  DomainName:
+    Type: String
+    Description: The Domain to deploy to
+    Default: static-site-example.shihabprojects.link
+
 Resources:
+  Cert:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: Z03783752ULSUSN7M1LWP
+      Tags:
+        - Key: Domain
+          Value: !Ref DomainName
+
   S3Bucket:
     Type: 'AWS::S3::Bucket'
     Properties:
@@ -43,16 +61,38 @@ Resources:
     Type: 'AWS::CloudFront::Distribution'
     Properties: 
         DistributionConfig:
+            Aliases:
+              - !Ref DomainName
             Enabled: True
+            IPV6Enabled: True
             DefaultCacheBehavior:
                 CachePolicyId: b2884449-e4de-46a7-ac36-70bc7f1ddd6d
                 TargetOriginId: s3-bucket
-                ViewerProtocolPolicy: allow-all
+                ViewerProtocolPolicy: redirect-to-https
             Origins:
                 -   Id: s3-bucket
+                    DomainName: !Join ['', [!Ref S3Bucket, '.s3-website-', !Ref 'AWS::Region', '.amazonaws.com']]
                     CustomOriginConfig:
-                        OriginProtocolPolicy: http-only
-                        DomainName: !GetAtt S3Bucket.DomainName
+                      OriginProtocolPolicy: https-only
+            ViewerCertificate:
+              AcmCertificateArn: !Ref Cert
+              MinimumProtocolVersion: TLSv1
+              SslSupportMethod: sni-only
+        Tags:
+          - Key: Domain
+            Value: !Ref DomainName
+  RecordSet:
+    Type: 'AWS::Route53::RecordSet'
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneName: shihabprojects.link.
+      Comment: DNS name for cloudfront distribution.
+      AliasTarget:
+        DNSName: !GetAtt CloudfrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+      Type: A
+  
+  
                 
 Outputs:
     WebsiteURL:
@@ -72,6 +112,6 @@ Outputs:
         Value: !Ref S3Bucket
         Description: BucketName for S3
     CloudFrontDomain:
-        Value: !GetAtt CloudFrontDistribution.DomainName
+        Value: !GetAtt CloudfrontDistribution.DomainName
         Description: Domain name for CloudFront Distribution
     
