@@ -5,6 +5,14 @@ Parameters:
     Type: String
     Description: The Domain to deploy to
     Default: static-site-example.shihabprojects.link
+  HostedZoneId:
+    Type: String
+    Description: The hosted zone id to create record in
+    Default: Z03783752ULSUSN7M1LWP
+  CiRole:
+    Type: String
+    Description: The role for CI to create BucketPolicy with
+    Default: StaticSiteExampleRole
 
 Resources:
   Cert:
@@ -14,7 +22,7 @@ Resources:
       ValidationMethod: DNS
       DomainValidationOptions:
         - DomainName: !Ref DomainName
-          HostedZoneId: Z03783752ULSUSN7M1LWP
+          HostedZoneId: !Ref HostedZoneId
       Tags:
         - Key: Domain
           Value: !Ref DomainName
@@ -40,7 +48,9 @@ Resources:
           - Sid: PublicReadForGetBucketObjects
             Effect: Allow
             Principal: '*'
-            Action: 's3:GetObject'
+            Action: 
+              - 's3:GetObject'
+              - 's3:GetObjectVersion'
             Resource: !Join 
               - ''
               - - 'arn:aws:s3:::'
@@ -49,7 +59,7 @@ Resources:
           - Sid: GithubUploadObjects
             Effect: Allow
             Principal: 
-              AWS: 'arn:aws:iam::958162765243:role/StaticSiteExampleRole'
+              AWS: !Join ['', ['arn:aws:iam::', !Ref AWS::AccountId, ':role/', !Ref CiRole]]
             Action: 's3:PutObject'
             Resource: !Join 
               - ''
@@ -73,7 +83,7 @@ Resources:
                 -   Id: s3-bucket
                     DomainName: !Join ['', [!Ref S3Bucket, '.s3-website-', !Ref 'AWS::Region', '.amazonaws.com']]
                     CustomOriginConfig:
-                      OriginProtocolPolicy: https-only
+                      OriginProtocolPolicy: http-only
             ViewerCertificate:
               AcmCertificateArn: !Ref Cert
               MinimumProtocolVersion: TLSv1
@@ -81,11 +91,12 @@ Resources:
         Tags:
           - Key: Domain
             Value: !Ref DomainName
+  
   RecordSet:
     Type: 'AWS::Route53::RecordSet'
     Properties:
       Name: !Ref DomainName
-      HostedZoneName: shihabprojects.link.
+      HostedZoneId: !Ref HostedZoneId
       Comment: DNS name for cloudfront distribution.
       AliasTarget:
         DNSName: !GetAtt CloudfrontDistribution.DomainName
@@ -114,4 +125,8 @@ Outputs:
     CloudFrontDomain:
         Value: !GetAtt CloudfrontDistribution.DomainName
         Description: Domain name for CloudFront Distribution
+    CloudfrontDeploymentID:
+      Value: !GetAtt CloudfrontDistribution.Id
+      Description: Deployment ID for Cloudfront distribution
+    
     
