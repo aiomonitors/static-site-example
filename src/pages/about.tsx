@@ -4,7 +4,7 @@ import styled from
 
 const IndexPage = () => (
 	<IndexPageWrapper>
-		<span>About Shihab</span>
+		<span>About Me</span>
 	</IndexPageWrapper>
 );
 
