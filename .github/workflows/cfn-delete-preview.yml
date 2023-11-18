@@ -36,7 +36,7 @@ jobs:
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
-          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[?OutputKey==`S3BucketName`].OutputValue" --output text)"
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[?OutputKey=='S3BucketName'].OutputValue" --output text)"
       - name: Delete S3 Bucket Objects
         run: |
           aws s3 rm s3://${{ steps.query_bucket.outputs.BucketName }} --recursive
