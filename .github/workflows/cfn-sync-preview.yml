@@ -60,7 +60,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/formation.yml \
+          aws cloudformation deploy --template-file ./cloudformation/preview.yml \
           --stack-name=${{ needs.set-env.outputs.aws_stack_name }} \
           --tags BranchName=${{ github.ref }} \
           --no-fail-on-empty-changeset \
