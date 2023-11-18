@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import styled from 
 	'styled-components';
 import {Counter} from '../components/Counter/Counter';
+import Link from 'next/link';
 
 const IndexPage = () => {
 	const [counter, setCount] = useState(0);
@@ -9,7 +10,9 @@ const IndexPage = () => {
 	return (
 		<IndexPageWrapper>
 			<span>Hello World!</span>
-			<Counter initialValue={0} />
+			<Link href="/about">
+        About
+			</Link>
 		</IndexPageWrapper>
 	);
 };
