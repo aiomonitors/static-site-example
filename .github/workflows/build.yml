@@ -95,13 +95,13 @@ jobs:
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
-          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[2].OutputValue")"
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[?OutputKey==`S3BucketName`].OutputValue")"
       - name: Sync Files
         run: |
           aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[1].OutputValue")" | tr -d \")" >> $GITHUB_OUTPUT
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[?OutputKey==`Domain`].OutputValue")" | tr -d \")" >> $GITHUB_OUTPUT
   update-deployment:
     needs: [create-deployment, build, upload-s3]
     name: Update Deployment Status

@@ -128,5 +128,8 @@ Outputs:
     CloudfrontDeploymentID:
       Value: !GetAtt CloudfrontDistribution.Id
       Description: Deployment ID for Cloudfront distribution
+    Domain:
+      Value: !Ref DomainName
+      Description: Domain for the website
     
     

@@ -121,7 +121,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Get Website URL
         id: website_url
-        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[1].OutputValue")" | tr -d \")" >> $GITHUB_OUTPUT
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[?OutputKey==`WebsiteURL`].OutputValue")" | tr -d \")" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@master
         with:
           name: static-site-build
@@ -129,7 +129,7 @@ jobs:
       - id: query_bucket
         name: Get S3 Bucket Name
         run: |
-          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[2].OutputValue")"
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ needs.set-env.outputs.aws_stack_name }} --query "Stacks[0].Outputs[?OutputKey==`S3BucketName`].OutputValue")"
       - name: Sync Files
         run: |
           aws s3 sync ./builds/out s3://${{ steps.query_bucket.outputs.BucketName }}
