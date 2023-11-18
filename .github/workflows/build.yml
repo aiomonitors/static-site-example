@@ -5,6 +5,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
+  DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
 
 # Permission can be added at job level or workflow level    
 permissions:
@@ -21,21 +22,21 @@ on:
       - completed
 
 jobs:
-  create-deployment:
-    runs-on: ubuntu-latest
-    name: Create Deployment in Github
-    outputs:
-      deployment_id: ${{ steps.deployment.outputs.deployment_id }}
-    steps:
-      - uses: actions/checkout@v3
-      - uses: chrnorm/deployment-action@v2
-        name: Create GitHub deployment
-        id: deployment
-        with:
-          token: '${{ github.token }}'
-          environment: production
-          auto-inactive: true
-          initial-status: "pending"
+  # create-deployment:
+  #   runs-on: ubuntu-latest
+  #   name: Create Deployment in Github
+  #   outputs:
+  #     deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: chrnorm/deployment-action@v2
+  #       name: Create GitHub deployment
+  #       id: deployment
+  #       with:
+  #         token: '${{ github.token }}'
+  #         environment: production
+  #         auto-inactive: true
+  #         initial-status: "pending"
   build:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: Build Application
@@ -70,10 +71,83 @@ jobs:
         with:
           name: static-site-build
           path: ./out
-  upload-s3:
+  upload-s3-qa:
     needs: build
     name: Upload Files to S3
     runs-on: ubuntu-latest
+    environment: 
+      name: qa
+      url: https://qa.${{ env.DOMAIN_NAME }}
+    outputs:
+      website_url: ${{ steps.website_url.outputs.url }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: actions/download-artifact@master
+        with:
+          name: static-site-build
+          path: ./out
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: static-site-build
+      - id: query_bucket
+        name: Get S3 Bucket Name
+        run: |
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-qa --query "Stacks[0].Outputs[?OutputKey=='S3BucketName'].OutputValue" --output text)"
+      - name: Sync Files
+        run: |
+          aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
+      - name: Get Website URL
+        id: website_url
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-qa --query "Stacks[0].Outputs[?OutputKey=='Domain'].OutputValue" --output text)" | tr -d \")" >> $GITHUB_OUTPUT
+  upload-s3-stage:
+    needs: build
+    name: Upload Files to S3
+    runs-on: ubuntu-latest
+    environment: 
+      name: stage
+      url: https://stage.${{ env.DOMAIN_NAME }}
+    outputs:
+      website_url: ${{ steps.website_url.outputs.url }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          role-to-assume: ${{ env.AWS_ROLE }} #change to reflect your IAM role’s ARN
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: actions/download-artifact@master
+        with:
+          name: static-site-build
+          path: ./out
+      - uses: geekyeggo/delete-artifact@v2
+        with:
+          name: static-site-build
+      - id: query_bucket
+        name: Get S3 Bucket Name
+        run: |
+          echo "::set-output name=BucketName::$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-stage --query "Stacks[0].Outputs[?OutputKey=='S3BucketName'].OutputValue" --output text)"
+      - name: Sync Files
+        run: |
+          aws s3 sync ./out s3://${{ steps.query_bucket.outputs.BucketName }}
+      - name: Get Website URL
+        id: website_url
+        run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }}-stage --query "Stacks[0].Outputs[?OutputKey=='Domain'].OutputValue" --output text)" | tr -d \")" >> $GITHUB_OUTPUT
+  upload-s3-prod:
+    needs: build
+    name: Upload Files to S3
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://${{ env.DOMAIN_NAME }}
     outputs:
       website_url: ${{ steps.website_url.outputs.url }}
     steps:
@@ -102,25 +176,25 @@ jobs:
       - name: Get Website URL
         id: website_url
         run: echo "url=$(echo "$(aws cloudformation describe-stacks --stack-name ${{ env.AWS_STACK_NAME }} --query "Stacks[0].Outputs[?OutputKey=='Domain'].OutputValue" --output text)" | tr -d \")" >> $GITHUB_OUTPUT
-  update-deployment:
-    needs: [create-deployment, build, upload-s3]
-    name: Update Deployment Status
-    runs-on: ubuntu-latest
-    steps: 
-      - uses: actions/checkout@v3
-      - name: Update Deployment - Success
-        if: ${{ always() && contains(needs.*.result, 'success') }}
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: '${{ github.token }}'
-          environment-url: ${{ needs.upload-s3.outputs.website_url }}
-          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
-          state: 'success'
-      - name: Update Deployment - Failure
-        if: ${{ always() && contains(needs.*.result, 'failure') }}
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: '${{ github.token }}'
-          deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
-          state: 'failure'
+  # update-deployment:
+  #   needs: [create-deployment, build, upload-s3]
+  #   name: Update Deployment Status
+  #   runs-on: ubuntu-latest
+  #   steps: 
+  #     - uses: actions/checkout@v3
+  #     - name: Update Deployment - Success
+  #       if: ${{ always() && contains(needs.*.result, 'success') }}
+  #       uses: chrnorm/deployment-status@v2
+  #       with:
+  #         token: '${{ github.token }}'
+  #         environment-url: ${{ needs.upload-s3.outputs.website_url }}
+  #         deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+  #         state: 'success'
+  #     - name: Update Deployment - Failure
+  #       if: ${{ always() && contains(needs.*.result, 'failure') }}
+  #       uses: chrnorm/deployment-status@v2
+  #       with:
+  #         token: '${{ github.token }}'
+  #         deployment-id: ${{ needs.create-deployment.outputs.deployment_id }}
+  #         state: 'failure'
 
