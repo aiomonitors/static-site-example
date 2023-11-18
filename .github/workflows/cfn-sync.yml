@@ -32,7 +32,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-qa --no-fail-on-empty-changeset --output text --override-parameters DomainName=qa.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-qa --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=qa.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-qa --output table
@@ -49,7 +49,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-stage --no-fail-on-empty-changeset --output text --override-parameters DomainName=stage.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-stage --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=stage.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-stage --output table
@@ -66,7 +66,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text --override-parameters DomainName=qa.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=qa.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output table
