@@ -11,6 +11,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
+  SUBDOMAIN: ${{ vars.SUBDOMAIN }}
   DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
 
 # Permission can be added at job level or workflow level    
@@ -32,7 +33,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-qa --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=qa.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-qa --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=${{ env.SUBDOMAIN }}-qa.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-qa --output table
@@ -49,7 +50,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-stage --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=stage.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }}-stage --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=${{ env.SUBDOMAIN }}-stage.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }}-stage --output table
@@ -66,7 +67,7 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
       - name: Deploy to AWS CFN
         run: | 
-          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=qa.${{ env.DOMAIN_NAME }}
+          aws cloudformation deploy --template-file ./cloudformation/production.yml --stack-name=${{ env.AWS_STACK_NAME }} --no-fail-on-empty-changeset --output text --parameter-overrides DomainName=${{ env.SUBDOMAIN }}.${{ env.DOMAIN_NAME }}
       - name: Get Outputs from Stack
         run: |
           aws cloudformation describe-stacks --stack-name=${{ env.AWS_STACK_NAME }} --output table

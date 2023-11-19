@@ -5,6 +5,7 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   AWS_ROLE: ${{ secrets.AWS_ROLE }}
   AWS_STACK_NAME: ${{ vars.AWS_STACK_NAME }}
+  SUBDOMAIN: ${{ vars.SUBDOMAIN }}
   DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
 
 # Permission can be added at job level or workflow level    
@@ -77,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: qa
-      url: https://qa.${{ env.DOMAIN_NAME }}
+      url: https://${{ env.SUBDOMAIN }}-qa.${{ env.DOMAIN_NAME }}
     outputs:
       website_url: ${{ steps.website_url.outputs.url }}
     steps:
@@ -112,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: stage
-      url: https://stage.${{ env.DOMAIN_NAME }}
+      url: https://${{ env.SUBDOMAIN }}-stage.${{ env.DOMAIN_NAME }}
     outputs:
       website_url: ${{ steps.website_url.outputs.url }}
     steps:
@@ -147,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: 
       name: production
-      url: https://${{ env.DOMAIN_NAME }}
+      url: https://${{ env.SUBDOMAIN }}.${{ env.DOMAIN_NAME }}
     outputs:
       website_url: ${{ steps.website_url.outputs.url }}
     steps:
